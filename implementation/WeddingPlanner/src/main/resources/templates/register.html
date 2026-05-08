@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventStudio - Sign Up</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); grid-auto-rows: 300px; gap: 10px; width: 100vw; height: 100vh; position: absolute; z-index: -1; overflow: hidden; padding: 10px; }
+        .bg-grid img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; opacity: 0.85; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(250, 245, 240, 0.4); backdrop-filter: blur(2px); z-index: 0; }
+        .login-card { z-index: 10; animation: popIn 0.8s forwards; }
+        @keyframes popIn { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="relative flex items-center justify-center min-h-screen bg-[#FDFBF7] p-6 overflow-x-hidden font-sans">
+
+<div class="bg-grid">
+    <img src="/wedding_location.jpg"><img src="/wedding_guests.jpg"><img src="/wedding_budget_planner.jpg">
+    <img src="/header-bg.jpg"><img src="/wedding_activities.jpg"><img src="/background.jpg">
+    <img src="/wedding_activities.jpg" alt="Wedding activities">
+    <img src="/header-bg.jpg" alt="Bridesmaids">
+    <img src="/wedding_guests.jpg" alt="Wedding guests">
+    <img src="/background.jpg" alt="Floral background">
+    <img src="/wedding_guests.jpg" alt="Wedding guests">
+    <img src="/wedding_budget_planner.jpg" alt="Budget planner">
+    <img src="/header-bg.jpg" alt="Bridesmaids">
+    <img src="/wedding_activities.jpg" alt="Wedding activities">
+    <img src="/header-bg.jpg" alt="Bridesmaids">
+    <img src="/wedding_activities.jpg" alt="Wedding activities">
+    <img src="/header-bg.jpg" alt="Bridesmaids">
+    <img src="/wedding_guests.jpg" alt="Wedding guests">
+    <img src="/background.jpg" alt="Floral background">
+</div>
+<div class="overlay"></div>
+
+<div class="login-card bg-white p-10 rounded-[2.5rem] shadow-2xl max-w-2xl w-full text-center">
+    <h1 class="text-3xl font-serif text-gray-800 mb-2">Create Account</h1>
+    <p class="text-xs text-gray-500 mb-8 uppercase tracking-widest">Join EventStudio Management</p>
+
+    <form th:action="@{/register}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 ml-1">First Name</label>
+            <input type="text" name="firstName" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87]">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 ml-1">Last Name</label>
+            <input type="text" name="lastName" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87]">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 ml-1">Username</label>
+            <input type="text" name="username" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87]">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 ml-1">Age</label>
+            <input type="number" name="age" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87]">
+        </div>
+        <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 ml-1">Email Address</label>
+            <input type="email" name="email" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87]">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 ml-1">Password</label>
+            <input type="password" name="password" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87]">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 ml-1">Confirm Password</label>
+            <input type="password" name="confirmPassword" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87]">
+        </div>
+
+        <div class="md:col-span-2 mt-4">
+            <button type="submit" class="w-full py-3.5 bg-[#C87D87] text-white rounded-full font-semibold shadow-lg hover:bg-[#b86a76] transition-all">
+                Register Account
+            </button>
+        </div>
+    </form>
+
+    <p class="mt-6 text-sm text-gray-500">Already have an account? <a href="/login" class="text-gray-800 font-bold hover:text-[#C87D87]">Log In</a></p>
+</div>
+</body>
+</html>

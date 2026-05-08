@@ -61,7 +61,7 @@
 											"top": 71,
 											"width": 158,
 											"height": 13,
-											"text": "User"
+											"text": "Organizer"
 										},
 										{
 											"_type": "LabelView",
@@ -4268,6 +4268,58 @@
 							"headQualifiersCompartment": {
 								"$ref": "AAAAAAGdLEmxT2wAq20="
 							}
+						},
+						{
+							"_type": "UMLTextView",
+							"_id": "AAAAAAGdLvgy1sa57LI=",
+							"_parent": {
+								"$ref": "AAAAAAFF+qBtyKM79qY="
+							},
+							"font": "Arial;13;0",
+							"left": 408,
+							"top": 160,
+							"width": 60,
+							"height": 25,
+							"text": "events"
+						},
+						{
+							"_type": "UMLTextView",
+							"_id": "AAAAAAGdLvhSp8rGyV4=",
+							"_parent": {
+								"$ref": "AAAAAAFF+qBtyKM79qY="
+							},
+							"font": "Arial;13;0",
+							"left": 272,
+							"top": 160,
+							"width": 75.0380859375,
+							"height": 25,
+							"text": "organizer"
+						},
+						{
+							"_type": "UMLTextView",
+							"_id": "AAAAAAGdLvou8M68bFs=",
+							"_parent": {
+								"$ref": "AAAAAAFF+qBtyKM79qY="
+							},
+							"font": "Arial;13;0",
+							"left": 696,
+							"top": 152,
+							"width": 60,
+							"height": 25,
+							"text": "guests"
+						},
+						{
+							"_type": "UMLTextView",
+							"_id": "AAAAAAGdLvpYYdOinDQ=",
+							"_parent": {
+								"$ref": "AAAAAAFF+qBtyKM79qY="
+							},
+							"font": "Arial;13;0",
+							"left": 624,
+							"top": 152,
+							"width": 60,
+							"height": 25,
+							"text": "event"
 						}
 					]
 				},
@@ -4277,7 +4329,7 @@
 					"_parent": {
 						"$ref": "AAAAAAFF+qBWK6M3Z8Y="
 					},
-					"name": "User",
+					"name": "Organizer",
 					"ownedElements": [
 						{
 							"_type": "UMLAssociation",

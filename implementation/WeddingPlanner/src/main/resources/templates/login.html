@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventStudio - Login</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* === Background Image Grid Collage === */
+        .bg-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-auto-rows: 300px;
+            gap: 10px;
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            overflow: hidden;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .bg-grid img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            opacity: 0.85;
+        }
+
+        /* === Soft Overlay to make the central card stand out === */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(250, 245, 240, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: 0;
+        }
+
+        /* === Authentication Card Animation === */
+        .login-card {
+            z-index: 10;
+            animation: popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.95) translateY(30px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+    </style>
+</head>
+<body class="relative flex items-center justify-center min-h-screen bg-[#FDFBF7] overflow-hidden font-sans">
+
+<div class="bg-grid">
+    <img src="/wedding_location.jpg" alt="Wedding location">
+    <img src="/wedding_guests.jpg" alt="Wedding guests">
+    <img src="/wedding_budget_planner.jpg" alt="Budget planner">
+    <img src="/header-bg.jpg" alt="Bridesmaids">
+    <img src="/wedding_activities.jpg" alt="Wedding activities">
+    <img src="/background.jpg" alt="Floral background">
+    <img src="/wedding_location.jpg" alt="Wedding location">
+    <img src="/header-bg.jpg" alt="Bridesmaids">
+    <img src="/wedding_activities.jpg" alt="Wedding activities">
+    <img src="/header-bg.jpg" alt="Bridesmaids">
+    <img src="/wedding_guests.jpg" alt="Wedding guests">
+    <img src="/background.jpg" alt="Floral background">
+    <img src="/wedding_guests.jpg" alt="Wedding guests">
+    <img src="/wedding_budget_planner.jpg" alt="Budget planner">
+    <img src="/header-bg.jpg" alt="Bridesmaids">
+    <img src="/wedding_activities.jpg" alt="Wedding activities">
+    <img src="/header-bg.jpg" alt="Bridesmaids">
+    <img src="/wedding_activities.jpg" alt="Wedding activities">
+    <img src="/header-bg.jpg" alt="Bridesmaids">
+    <img src="/wedding_guests.jpg" alt="Wedding guests">
+    <img src="/background.jpg" alt="Floral background">
+</div>
+
+<div class="overlay"></div>
+
+<div class="login-card bg-white p-12 rounded-[2.5rem] shadow-2xl max-w-md w-full mx-4 text-center">
+
+    <div class="mb-10">
+        <div class="flex justify-center mb-4 text-[#C87D87]">
+            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+        </div>
+        <h1 class="text-4xl font-serif text-gray-800 tracking-tight">EventStudio</h1>
+        <p class="text-xs text-gray-500 mt-2 tracking-widest uppercase">Wedding & Event Management</p>
+    </div>
+
+    <form action="#" method="POST" class="space-y-6 text-left">
+
+        <div>
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-1 ml-1">Email</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                </div>
+                <input type="email" id="email" name="email" required
+                       class="block w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-[#C87D87] focus:border-[#C87D87] transition-colors text-gray-700"
+                       placeholder="Your email address">
+            </div>
+        </div>
+
+        <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 mb-1 ml-1">Password</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <input type="password" id="password" name="password" required
+                       class="block w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-[#C87D87] focus:border-[#C87D87] transition-colors text-gray-700"
+                       placeholder="Your password">
+            </div>
+        </div>
+
+        <button type="submit"
+                class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-full shadow-lg text-base font-semibold text-white bg-[#C87D87] hover:bg-[#b86a76] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#C87D87] transition-all transform hover:-translate-y-0.5 mt-8">
+            Log In
+        </button>
+    </form>
+
+    <div class="mt-8 space-y-4">
+        <a href="#" class="text-sm text-gray-500 hover:text-gray-800 transition-colors border-b border-transparent hover:border-gray-400 pb-0.5">Forgot Password?</a>
+        <p class="text-sm text-gray-500">Don't have an account? <a href="/register" class="text-gray-800 font-bold hover:text-[#C87D87] transition-colors">Sign Up</a></p>
+    </div>
+
+</div>
+</body>
+</html>

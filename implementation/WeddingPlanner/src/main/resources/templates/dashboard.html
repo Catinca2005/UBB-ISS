@@ -124,10 +124,10 @@
         <h1 class="font-serif text-2xl text-[#C87D87] font-bold">EventStudio</h1>
         <ul class="flex gap-8 items-center text-sm font-medium">
             <li><a href="#" class="nav-link active"><i class="fa-solid fa-chart-line mr-2"></i>Dashboard</a></li>
-            <li><a href="#" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-users mr-2"></i>Invitati</a></li>
-            <li><a href="#" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-list-check mr-2"></i>Sarcini</a></li>
-            <li><a href="#" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-wallet mr-2"></i>Finante</a></li>
-            <li><a href="#" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-briefcase mr-2"></i>Echipa</a></li>
+            <li><a href="/guests" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-users mr-2"></i>Invitati</a></li>
+            <li><a href="/tasks" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-list-check mr-2"></i>Sarcini</a></li>
+            <li><a href="/budget" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-wallet mr-2"></i>Finante</a></li>
+            <li><a href="/seating" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-chair mr-2"></i>Seat Manager</a></li>
             <li><a href="/login" class="ml-4 px-6 py-2 bg-rose-50 text-[#C87D87] rounded-full hover:bg-[#C87D87] hover:text-white transition-all"><i class="fa-solid fa-right-from-bracket"></i></a></li>
         </ul>
     </div>
@@ -186,9 +186,29 @@
                     </a>
                 </div>
 
-                <div class="bg-rose-50/50 border-2 border-dashed border-rose-200 rounded-[2rem] p-12 text-center">
+                <!-- Display when no events exist -->
+                <div th:if="${events == null or events.isEmpty()}" class="bg-rose-50/50 border-2 border-dashed border-rose-200 rounded-[2rem] p-12 text-center">
                     <p class="text-rose-400 text-2xl font-medium mb-2">Ready for a new event? 🌸 ✨</p>
                     <p class="text-gray-400 text-sm italic">Click the "New Event" button above to start planning your dream day.</p>
+                </div>
+
+                <!-- Display list of events if they exist -->
+                <div th:if="${events != null and !events.isEmpty()}" class="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div th:each="event : ${events}" 
+                         class="event-card bg-white p-6 rounded-2xl border border-rose-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex justify-between items-center group"
+                         th:data-budget="${event.totalBudget}" th:data-spent="${spentMap.get(event.id)}" th:data-name="${event.name}" th:data-id="${event.id}">
+                        <div>
+                            <h4 class="font-serif text-xl text-gray-800 group-hover:text-[#C87D87] transition-colors" th:text="${event.name}">Event Name</h4>
+                            <p class="text-sm text-gray-500 mt-1 flex items-center">
+                                <i class="fa-regular fa-calendar mr-2 text-rose-300"></i>
+                                <span th:text="${event.eventDate}">Date</span>
+                            </p>
+                        </div>
+                        <div class="text-right flex flex-col gap-2 items-end">
+                            <a th:href="@{/events/{id}/guests(id=${event.id})}" class="text-white bg-[#C87D87] px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-[#b86a76] transition-colors"><i class="fa-solid fa-users mr-1"></i>Guests</a>
+                            <span class="text-[#C87D87] bg-rose-50 px-4 py-1.5 rounded-full text-xs font-semibold group-hover:bg-rose-100 transition-colors cursor-pointer">Select for Budget</span>
+                        </div>
+                    </div>
                 </div>
             </section>
         </div>
@@ -201,14 +221,22 @@
                 <div class="budget-circle">
                     <div class="z-10 text-center">
                         <p class="text-xs text-gray-400 uppercase tracking-tighter mb-1">Available</p>
-                        <p class="text-2xl font-bold text-gray-300">0%</p>
+                        <p id="budget-circle-percentage" class="text-2xl font-bold text-gray-300">0%</p>
                     </div>
                 </div>
 
                 <div class="mt-10 w-full space-y-4">
-                    <div class="flex justify-between text-sm border-b border-rose-50 pb-2">
-                        <span class="text-gray-400 italic">No event selected</span>
-                        <span class="font-bold text-gray-400">$0.00</span>
+                    <div class="flex justify-between text-sm border-b border-gray-100 pb-2">
+                        <span id="selected-event-name" class="text-gray-400 italic">No event selected</span>
+                        <span id="selected-event-budget" class="font-bold text-gray-400">$0.00</span>
+                    </div>
+                    <div class="flex justify-between text-sm border-b border-gray-100 pb-2">
+                        <span class="text-gray-500">Spent (Tasks)</span>
+                        <span id="selected-event-spent" class="font-semibold text-rose-400">$0.00</span>
+                    </div>
+                    <div class="flex justify-between text-sm border-b border-gray-100 pb-2">
+                        <span class="text-gray-500">Available</span>
+                        <span id="selected-event-available" class="font-semibold text-green-500">$0.00</span>
                     </div>
                     <p class="text-xs text-gray-400 text-center leading-relaxed mt-4">
                         Select an active event from the list to view your personalized budget distribution.
@@ -229,6 +257,7 @@
 </footer>
 
 <script>
+    // --- Carousel Logic ---
     let slideIndex = 0;
     const slides = document.getElementsByClassName("carousel-item");
 
@@ -244,6 +273,76 @@
     }
 
     showSlides();
+
+    // --- Budget Diagram Update Logic ---
+    document.addEventListener("DOMContentLoaded", () => {
+        const eventCards = document.querySelectorAll('.event-card');
+        const budgetAmountElement = document.getElementById('selected-event-budget');
+        const eventNameElement = document.getElementById('selected-event-name');
+        const budgetCircleText = document.getElementById('budget-circle-percentage');
+        
+        eventCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Extract data from the clicked event card
+                const budget = parseFloat(card.getAttribute('data-budget')) || 0;
+                const spent = parseFloat(card.getAttribute('data-spent')) || 0;
+                const name = card.getAttribute('data-name');
+                const id = card.getAttribute('data-id');
+                const available = Math.max(0, budget - spent);
+                
+                // Calculate percentage for the circle
+                let percentage = 0;
+                if (budget > 0) {
+                    percentage = Math.round((available / budget) * 100);
+                }
+                
+                // Tell the backend that this event was selected, so top navbar works correctly
+                if (id) {
+                    fetch('/events/' + id + '/select').catch(console.error);
+                }
+                
+                // Format amounts
+                const formattedBudget = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(budget);
+                const formattedAvailable = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(available);
+                const formattedSpent = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(spent);
+                
+                // Update the circle visual
+                const circle = document.getElementById('budget-circle');
+                if (circle) circle.style.background = `conic-gradient(#C87D87 0%, #C87D87 ${percentage}%, #f3f4f6 ${percentage}%, #f3f4f6 100%)`;
+                
+                // Update UI elements to display the selected event's budget
+                if (eventNameElement) {
+                    eventNameElement.textContent = name;
+                    eventNameElement.classList.remove('text-gray-400', 'italic');
+                    eventNameElement.classList.add('text-gray-700', 'font-semibold');
+                }
+                
+                if (budgetAmountElement) {
+                    budgetAmountElement.textContent = formattedBudget;
+                    budgetAmountElement.classList.remove('text-gray-400');
+                    budgetAmountElement.classList.add('text-gray-700');
+                }
+
+                const spentElement = document.getElementById('selected-event-spent');
+                if (spentElement) spentElement.textContent = formattedSpent;
+
+                const availableElement = document.getElementById('selected-event-available');
+                if (availableElement) availableElement.textContent = formattedAvailable;
+                
+                if (budgetCircleText) {
+                    budgetCircleText.textContent = percentage + "%";
+                    budgetCircleText.classList.remove('text-gray-300');
+                    budgetCircleText.classList.add('text-[#C87D87]');
+                }
+                
+                // Highlight the selected card and unhighlight others
+                eventCards.forEach(c => {
+                    c.classList.remove('border-[#C87D87]', 'bg-rose-50');
+                });
+                card.classList.add('border-[#C87D87]', 'bg-rose-50');
+            });
+        });
+    });
 </script>
 </body>
 </html>

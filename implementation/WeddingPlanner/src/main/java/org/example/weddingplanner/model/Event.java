@@ -95,4 +95,7 @@ public class Event {
     public void setOrganizer(User organizer) {
         this.organizer = organizer;
     }
+
+    // Note: To avoid circular dependencies, it is recommended not to load the guests list by default
+    // or add a getter/setter for it unless specifically needed for bidirectional management.
 }

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventStudio - Task Board</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: url('/background.jpg');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+        }
+        .body-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(253, 251, 247, 0.90); z-index: -1;
+        }
+        .nav-link { position: relative; color: #4b5563; transition: all 0.3s ease; font-weight: 500; }
+        .nav-link:hover { color: #C87D87; }
+        .nav-link.active { color: #C87D87; font-weight: 600; }
+        .nav-link.active::after {
+            content: ''; position: absolute; bottom: -4px; left: 0; width: 100%; height: 2px;
+            background-color: #C87D87; border-radius: 2px;
+        }
+        .card { background: white; border-radius: 1.5rem; box-shadow: 0 10px 40px -10px rgba(200,125,135,0.1); }
+        .table-row-hover:hover { background-color: #fffafb; }
+        
+        /* Modal Styles */
+        .modal { display: none; opacity: 0; transition: opacity 0.3s ease; }
+        .modal.show { display: flex; opacity: 1; }
+        .modal-content { transform: scale(0.95); transition: transform 0.3s ease; }
+        .modal.show .modal-content { transform: scale(1); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<div class="body-overlay"></div>
+
+<!-- Top Navigation Bar -->
+<nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-rose-100/50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <h1 class="font-serif text-2xl text-[#C87D87] font-bold">EventStudio</h1>
+        <ul class="flex gap-8 items-center text-sm font-medium">
+            <li><a href="/dashboard" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-chart-line mr-2"></i>Dashboard</a></li>
+            <li><a href="/guests" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-users mr-2"></i>Invitati</a></li>
+            <li><a href="/tasks" class="nav-link text-[#C87D87] font-semibold active"><i class="fa-solid fa-list-check mr-2"></i>Sarcini</a></li>
+            <li><a href="/budget" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-wallet mr-2"></i>Finante</a></li>
+            <li><a href="/seating" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-chair mr-2"></i>Seat Manager</a></li>
+            <li><a href="/login" class="ml-4 px-6 py-2 bg-rose-50 text-[#C87D87] rounded-full hover:bg-[#C87D87] hover:text-white transition-all"><i class="fa-solid fa-right-from-bracket"></i></a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="flex-grow max-w-7xl mx-auto px-6 py-10 w-full">
+    <!-- Header -->
+    <div class="flex justify-between items-end mb-8">
+        <div>
+            <h2 class="font-serif text-3xl text-gray-800" th:text="${event.name} + ' - Task Board'">Task Board</h2>
+            <p class="text-sm text-gray-500 mt-2">Manage tasks, deadlines, and estimated costs for your event.</p>
+        </div>
+        <div class="flex gap-4">
+            <div class="bg-rose-50 border border-rose-100 rounded-xl px-6 py-3 text-right">
+                <p class="text-xs text-rose-400 font-semibold uppercase tracking-wider mb-1">Total Spent</p>
+                <p class="text-xl font-bold text-[#C87D87]" th:text="'$' + ${#numbers.formatDecimal(totalSpent, 1, 'COMMA', 2, 'POINT')}">$0.00</p>
+            </div>
+            <button onclick="openModal()" class="h-full px-6 bg-[#C87D87] text-white rounded-xl font-semibold shadow-lg hover:bg-[#b86a76] hover:shadow-xl transition-all flex items-center justify-center">
+                <i class="fa-solid fa-plus mr-2"></i> Add New Task
+            </button>
+        </div>
+    </div>
+
+    <!-- Task Table -->
+    <div class="card overflow-hidden border border-rose-100">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50/50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <th class="py-4 px-6">Task Description</th>
+                        <th class="py-4 px-6">Role & Assignee</th>
+                        <th class="py-4 px-6">Deadline</th>
+                        <th class="py-4 px-6 text-right">Cost</th>
+                        <th class="py-4 px-6 text-center">Status</th>
+                        <th class="py-4 px-6 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm text-gray-700">
+                    <tr th:if="${tasks == null or tasks.isEmpty()}">
+                        <td colspan="6" class="py-12 text-center text-gray-400">
+                            <i class="fa-solid fa-clipboard-list text-4xl mb-3 text-rose-200 block"></i>
+                            No tasks found. Click "Add New Task" to start organizing!
+                        </td>
+                    </tr>
+                    <tr th:each="task : ${tasks}" class="border-b border-gray-50 table-row-hover transition-colors last:border-0">
+                        <td class="py-4 px-6 font-medium text-gray-800" th:text="${task.description}">Task Name</td>
+                        <td class="py-4 px-6">
+                            <p class="text-gray-800 font-medium" th:text="${task.role}">Role</p>
+                            <p class="text-xs text-gray-500" th:text="${task.assigneeName}">Assignee</p>
+                        </td>
+                        <td class="py-4 px-6 text-gray-500">
+                            <i class="fa-regular fa-calendar text-rose-300 mr-1"></i> <span th:text="${task.deadline}">Date</span>
+                        </td>
+                        <td class="py-4 px-6 text-right font-semibold text-gray-700" th:text="'$' + ${#numbers.formatDecimal(task.estimatedCost, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                        <td class="py-4 px-6 text-center">
+                            <span th:if="${task.status == 'Completed'}" class="bg-green-50 text-green-600 border border-green-200 px-3 py-1 rounded-full text-xs font-semibold">
+                                <i class="fa-solid fa-check mr-1"></i> Completed
+                            </span>
+                            <span th:if="${task.status == 'Pending'}" class="bg-yellow-50 text-yellow-600 border border-yellow-200 px-3 py-1 rounded-full text-xs font-semibold">
+                                <i class="fa-regular fa-clock mr-1"></i> Pending
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 text-right flex justify-end gap-3 items-center h-full mt-2">
+                            <form th:if="${task.status == 'Pending'}" th:action="@{/events/{eventId}/tasks/{taskId}/complete(eventId=${event.id}, taskId=${task.id})}" method="POST">
+                                <button type="submit" class="text-green-500 hover:text-green-600 bg-green-50 p-2 rounded-lg transition-colors" title="Mark as Completed">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                            </form>
+                            <form th:action="@{/events/{eventId}/tasks/{taskId}/delete(eventId=${event.id}, taskId=${task.id})}" method="POST" onsubmit="return confirm('Delete this task?');">
+                                <button type="submit" class="text-rose-400 hover:text-red-500 bg-rose-50 p-2 rounded-lg transition-colors" title="Delete Task">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div id="taskModal" class="modal fixed inset-0 z-50 items-center justify-center">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onclick="closeModal()"></div>
+    
+    <!-- Modal Content -->
+    <div class="modal-content relative bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl border border-rose-100 mx-4">
+        <button onclick="closeModal()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+        
+        <h3 class="font-serif text-2xl text-gray-800 mb-6">Create New Task</h3>
+        
+        <form th:action="@{/events/{eventId}/tasks/new(eventId=${event.id})}" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1 ml-1">Task Description *</label>
+                <input type="text" name="description" required placeholder="e.g. Find and book photographer"
+                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87] transition-colors text-sm">
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1 ml-1">Role</label>
+                    <input type="text" name="role" placeholder="e.g. Fotograf"
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87] transition-colors text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1 ml-1">Assignee Name</label>
+                    <input type="text" name="assigneeName" placeholder="e.g. Ion Popescu"
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87] transition-colors text-sm">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1 ml-1">Deadline *</label>
+                    <input type="date" name="deadline" required
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87] transition-colors text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1 ml-1">Est. Cost ($) *</label>
+                    <input type="number" name="estimatedCost" min="0" step="0.01" required placeholder="0.00"
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87] transition-colors text-sm">
+                </div>
+            </div>
+            
+            <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-6">
+                <button type="button" onclick="closeModal()" class="px-6 py-2.5 text-gray-500 font-semibold text-sm rounded-full hover:bg-gray-100 transition-colors">Cancel</button>
+                <button type="submit" class="px-8 py-2.5 bg-[#C87D87] text-white font-semibold text-sm rounded-full shadow-lg hover:bg-[#b86a76] hover:shadow-xl transition-all">Save Task</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openModal() {
+        document.getElementById('taskModal').classList.add('show');
+    }
+    
+    function closeModal() {
+        document.getElementById('taskModal').classList.remove('show');
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventStudio - Seat Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: url('/background.jpg');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+        }
+        .body-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(253, 251, 247, 0.88); z-index: -1;
+        }
+        .nav-link { position: relative; color: #4b5563; transition: all 0.3s ease; font-weight: 500; }
+        .nav-link:hover { color: #C87D87; }
+        .nav-link.active { color: #C87D87; font-weight: 600; }
+        .nav-link.active::after {
+            content: ''; position: absolute; bottom: -4px; left: 0; width: 100%; height: 2px;
+            background-color: #C87D87; border-radius: 2px;
+        }
+
+        /* Guest sidebar */
+        .guest-item { cursor: pointer; transition: all 0.2s ease; }
+        .guest-item:hover { background-color: #fff1f2; }
+        .guest-item.selected { background-color: #C87D87; color: white; transform: scale(1.02); box-shadow: 0 4px 12px rgba(200,125,135,0.3); }
+        .guest-item.selected .guest-status { color: rgba(255,255,255,0.7); }
+        .guest-item.seated { opacity: 0.45; pointer-events: none; }
+
+        /* Round table */
+        .round-table {
+            width: 220px; height: 220px;
+            border-radius: 50%;
+            border: 3px solid #e5e7eb;
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(253,251,247,0.95)), url('/background.jpg');
+            background-size: cover;
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px -5px rgba(0,0,0,0.08);
+        }
+        .round-table:hover { border-color: #C87D87; box-shadow: 0 12px 35px -5px rgba(200,125,135,0.2); }
+        .round-table.can-drop { border-color: #C87D87; border-style: dashed; animation: pulse-border 1.5s ease infinite; }
+
+        @keyframes pulse-border {
+            0%, 100% { border-color: #C87D87; box-shadow: 0 0 0 0 rgba(200,125,135,0.3); }
+            50% { border-color: #b86a76; box-shadow: 0 0 0 8px rgba(200,125,135,0); }
+        }
+
+        /* Seats around the table */
+        .table-seat {
+            position: absolute;
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            background: #f9fafb;
+            border: 2px dashed #d1d5db;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 9px; font-weight: 600;
+            color: #9ca3af;
+            transition: all 0.2s ease;
+        }
+        .table-seat.occupied {
+            background: linear-gradient(135deg, #C87D87, #b86a76);
+            border: 2px solid #a05a64;
+            color: white;
+            font-size: 8px;
+            cursor: default;
+            box-shadow: 0 2px 8px rgba(200,125,135,0.3);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 24px; right: 24px; z-index: 100;
+            animation: slide-up 0.4s ease;
+        }
+        @keyframes slide-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<div class="body-overlay"></div>
+
+<!-- Top Navigation Bar -->
+<nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-rose-100/50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <h1 class="font-serif text-2xl text-[#C87D87] font-bold">EventStudio</h1>
+        <ul class="flex gap-8 items-center text-sm font-medium">
+            <li><a href="/dashboard" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-chart-line mr-2"></i>Dashboard</a></li>
+            <li><a href="/guests" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-users mr-2"></i>Invitati</a></li>
+            <li><a href="/tasks" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-list-check mr-2"></i>Sarcini</a></li>
+            <li><a href="/budget" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-wallet mr-2"></i>Finante</a></li>
+            <li><a href="/seating" class="nav-link text-[#C87D87] font-semibold active"><i class="fa-solid fa-chair mr-2"></i>Seat Manager</a></li>
+            <li><a href="/login" class="ml-4 px-6 py-2 bg-rose-50 text-[#C87D87] rounded-full hover:bg-[#C87D87] hover:text-white transition-all"><i class="fa-solid fa-right-from-bracket"></i></a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="flex-grow max-w-[1400px] mx-auto px-6 py-8 w-full">
+    <!-- Header -->
+    <div class="mb-6">
+        <h2 class="font-serif text-3xl text-gray-800" th:text="${event.name} + ' - Seat Manager'">Seat Manager</h2>
+        <p class="text-sm text-gray-500 mt-1">Click a guest, then click a table to assign them.</p>
+    </div>
+
+    <!-- Error Toast -->
+    <div th:if="${error}" class="toast bg-rose-500 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+        <i class="fa-solid fa-circle-exclamation text-lg"></i>
+        <span th:text="${error}" class="text-sm font-medium">Error</span>
+    </div>
+
+    <div class="flex gap-6" style="min-height: calc(100vh - 200px);">
+
+        <!-- LEFT SIDEBAR: Guest List -->
+        <div class="w-72 flex-shrink-0 bg-white/90 backdrop-blur-md rounded-2xl border border-rose-100 shadow-lg flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-rose-50 bg-white/80">
+                <h3 class="font-serif text-lg text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-user-group text-[#C87D87]"></i> Invitați
+                </h3>
+                <p class="text-xs text-gray-400 mt-1">Click to select, then click a table</p>
+            </div>
+            <div class="flex-grow overflow-y-auto p-3 space-y-1.5">
+                <div th:if="${allGuests == null or allGuests.isEmpty()}" class="text-center py-8 text-gray-400 text-sm">
+                    <i class="fa-solid fa-user-slash text-3xl mb-2 text-gray-300 block"></i>
+                    No guests yet.
+                </div>
+                <div th:each="guest : ${allGuests}"
+                     class="guest-item rounded-xl px-4 py-3 flex items-center gap-3"
+                     th:classappend="${guest.seatingTable != null} ? 'seated' : ''"
+                     th:attr="data-guest-id=${guest.id}"
+                     onclick="selectGuest(this)">
+                    <div class="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-[#C87D87] text-xs font-bold flex-shrink-0"
+                         th:text="${#strings.substring(guest.name, 0, 1)}">A</div>
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-gray-700 truncate" th:text="${guest.name}">Name</p>
+                        <p class="guest-status text-xs text-gray-400 truncate">
+                            <span th:if="${guest.seatingTable != null}" th:text="'📍 ' + ${guest.seatingTable.tableName}">Seated</span>
+                            <span th:if="${guest.seatingTable == null}">Neasignat</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT AREA: Tables -->
+        <div class="flex-grow flex flex-col">
+            <!-- Add Table Controls -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl border border-rose-100 shadow-lg p-5 mb-6 flex items-center gap-4 flex-wrap">
+                <span class="text-sm font-medium text-gray-600">Locuri per masă:</span>
+                <select id="maxSeatsSelect" class="px-4 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:ring-[#C87D87] focus:border-[#C87D87]">
+                    <option value="4">4 locuri</option>
+                    <option value="6">6 locuri</option>
+                    <option value="8" selected>8 locuri</option>
+                    <option value="10">10 locuri</option>
+                    <option value="12">12 locuri</option>
+                </select>
+                <form th:action="@{/events/{eventId}/seating/tables/new(eventId=${event.id})}" method="POST" id="addTableForm" class="inline">
+                    <input type="hidden" name="maxSeats" id="maxSeatsHidden" value="8">
+                    <button type="submit" class="px-5 py-2 bg-[#C87D87] text-white rounded-xl font-semibold shadow-md hover:bg-[#b86a76] hover:shadow-lg transition-all text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Adaugă Masă
+                    </button>
+                </form>
+                <div class="ml-auto text-sm text-gray-500">
+                    <span th:text="${tables.size()}" class="font-bold text-gray-700">0</span> mese create
+                </div>
+            </div>
+
+            <!-- Tables Grid -->
+            <div class="flex-grow">
+                <div th:if="${tables == null or tables.isEmpty()}" class="flex flex-col items-center justify-center h-full text-gray-400">
+                    <i class="fa-solid fa-chair text-6xl mb-4 text-gray-200"></i>
+                    <p class="text-lg font-medium">Nicio masă creată</p>
+                    <p class="text-sm mt-1">Selectează numărul de locuri și apasă "Adaugă Masă"</p>
+                </div>
+
+                <div class="flex flex-wrap gap-10 justify-center items-start py-4">
+                    <div th:each="table : ${tables}" class="flex flex-col items-center gap-3">
+                        <!-- Table circle -->
+                        <div class="round-table"
+                             th:attr="data-table-id=${table.id}, data-max=${table.maxSeats}"
+                             onclick="assignToTable(this)">
+                            <!-- Center label -->
+                            <div class="text-center z-10 pointer-events-none">
+                                <p class="font-serif text-sm font-bold text-gray-700" th:text="${table.tableName}">Masa 1</p>
+                                <p class="text-xs text-gray-400 mt-0.5">
+                                    <span th:text="${tableOccupancyMap[table.id]}">0</span>/<span th:text="${table.maxSeats}">10</span>
+                                </p>
+                            </div>
+
+                            <!-- Seated guests as dots around the circle -->
+                            <div th:each="g, stat : ${tableGuestsMap[table.id]}"
+                                 class="table-seat occupied seat-position"
+                                 th:attr="data-index=${stat.index}, data-max=${table.maxSeats}"
+                                 th:title="${g.name}">
+                                <span class="truncate max-w-[42px] block text-center leading-tight" th:text="${#strings.abbreviate(g.name, 7)}">Name</span>
+                            </div>
+                            <!-- Empty seats -->
+                            <th:block th:with="occupiedCount=${tableOccupancyMap[table.id]}">
+                                <div th:each="i : ${#numbers.sequence(occupiedCount, table.maxSeats - 1)}"
+                                     class="table-seat seat-position"
+                                     th:attr="data-index=${i}, data-max=${table.maxSeats}">
+                                    <i class="fa-solid fa-plus text-[10px]"></i>
+                                </div>
+                            </th:block>
+                        </div>
+
+                        <!-- Table actions -->
+                        <div class="flex gap-2">
+                            <!-- Unassign buttons for each guest at this table -->
+                            <div class="flex flex-wrap justify-center gap-1 max-w-[220px]">
+                                <th:block th:each="g : ${tableGuestsMap[table.id]}">
+                                    <form th:action="@{/events/{eventId}/seating/unassign(eventId=${event.id})}" method="POST" class="inline">
+                                        <input type="hidden" name="guestId" th:value="${g.id}">
+                                        <button type="submit" class="text-[10px] bg-gray-100 hover:bg-rose-100 hover:text-rose-600 text-gray-500 px-2 py-0.5 rounded-full transition-colors flex items-center gap-1" th:title="'Scoate ' + ${g.name}">
+                                            <i class="fa-solid fa-xmark"></i>
+                                            <span th:text="${#strings.abbreviate(g.name, 8)}">Name</span>
+                                        </button>
+                                    </form>
+                                </th:block>
+                            </div>
+                        </div>
+                        <!-- Delete table -->
+                        <form th:action="@{/events/{eventId}/seating/tables/{tableId}/delete(eventId=${event.id}, tableId=${table.id})}" method="POST">
+                            <button type="submit" class="text-xs text-gray-400 hover:text-rose-500 transition-colors" onclick="return confirm('Ștergi această masă?')">
+                                <i class="fa-solid fa-trash mr-1"></i>Șterge masa
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for assignment -->
+<form id="assignForm" th:action="@{/events/{eventId}/seating/assign(eventId=${event.id})}" method="POST" style="display:none;">
+    <input type="hidden" name="guestId" id="assignGuestId">
+    <input type="hidden" name="tableId" id="assignTableId">
+</form>
+
+<script>
+    // Sync dropdown to hidden input
+    document.getElementById('maxSeatsSelect').addEventListener('change', function() {
+        document.getElementById('maxSeatsHidden').value = this.value;
+    });
+
+    let selectedGuestId = null;
+    let selectedGuestElement = null;
+
+    function selectGuest(el) {
+        if (el.classList.contains('seated')) return;
+
+        // Deselect previous
+        if (selectedGuestElement) {
+            selectedGuestElement.classList.remove('selected');
+        }
+
+        // Toggle if clicking the same guest
+        if (selectedGuestElement === el) {
+            selectedGuestElement = null;
+            selectedGuestId = null;
+            updateTableHighlights(false);
+            return;
+        }
+
+        // Select new
+        el.classList.add('selected');
+        selectedGuestElement = el;
+        selectedGuestId = el.getAttribute('data-guest-id');
+
+        // Highlight available tables
+        updateTableHighlights(true);
+    }
+
+    function updateTableHighlights(show) {
+        document.querySelectorAll('.round-table').forEach(t => {
+            if (show) {
+                t.classList.add('can-drop');
+            } else {
+                t.classList.remove('can-drop');
+            }
+        });
+    }
+
+    function assignToTable(tableEl) {
+        if (!selectedGuestId) return;
+
+        const tableId = tableEl.getAttribute('data-table-id');
+
+        document.getElementById('assignGuestId').value = selectedGuestId;
+        document.getElementById('assignTableId').value = tableId;
+        document.getElementById('assignForm').submit();
+    }
+
+    // Auto-hide toast after 4 seconds
+    setTimeout(() => {
+        const toast = document.querySelector('.toast');
+        if (toast) toast.style.display = 'none';
+    }, 4000);
+
+    // Position seats in a circle around each table using JS
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.seat-position').forEach(seat => {
+            const index = parseInt(seat.getAttribute('data-index'));
+            const max = parseInt(seat.getAttribute('data-max'));
+            const angle = (2 * Math.PI * index / max) - (Math.PI / 2);
+            const cx = 110, cy = 110, r = 95, seatR = 26;
+            seat.style.left = (cx + Math.cos(angle) * r - seatR) + 'px';
+            seat.style.top  = (cy + Math.sin(angle) * r - seatR) + 'px';
+        });
+    });
+</script>
+
+</body>
+</html>

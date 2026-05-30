@@ -7,11 +7,10 @@ import org.example.weddingplanner.repository.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Controller responsible for managing event-related routing and logic.
@@ -21,6 +20,12 @@ public class EventController {
 
     @Autowired
     private EventRepository eventRepository;
+
+    @Autowired
+    private org.example.weddingplanner.repository.TaskRepository taskRepository;
+
+    @Autowired
+    private org.example.weddingplanner.repository.ShoppingItemRepository shoppingItemRepository;
 
     /**
      * Renders the main dashboard.
@@ -37,11 +42,27 @@ public class EventController {
         // 2. Fetch user's events from the database
         List<Event> userEvents = eventRepository.findAllByOrganizerId(loggedInUser.getId());
 
-        // 3. Send data to the HTML template
+        // 3. Calculate spent budget for each event (Tasks + Shopping)
+        java.util.Map<UUID, Double> spentMap = new java.util.HashMap<>();
+        for (Event event : userEvents) {
+            Double tasksSpent = taskRepository.sumEstimatedCostByEventId(event.getId());
+            Double shoppingSpent = shoppingItemRepository.sumCostByEventId(event.getId());
+            spentMap.put(event.getId(), tasksSpent + shoppingSpent);
+        }
+
+        // 4. Send data to the HTML template
         model.addAttribute("events", userEvents);
+        model.addAttribute("spentMap", spentMap);
         model.addAttribute("user", loggedInUser);
 
         return "dashboard";
+    }
+
+    @GetMapping("/events/{id}/select")
+    @ResponseBody
+    public String selectEventForSession(@PathVariable UUID id, HttpSession session) {
+        session.setAttribute("selectedEventId", id);
+        return "success";
     }
 
     /**

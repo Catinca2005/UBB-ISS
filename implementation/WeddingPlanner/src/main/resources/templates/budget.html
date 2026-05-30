@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventStudio - Financial Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: url('/background.jpg');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+        }
+        .body-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(253, 251, 247, 0.85); z-index: -1;
+        }
+        .nav-link { position: relative; color: #4b5563; transition: all 0.3s ease; font-weight: 500; }
+        .nav-link:hover { color: #C87D87; }
+        .nav-link.active { color: #C87D87; font-weight: 600; }
+        .nav-link.active::after {
+            content: ''; position: absolute; bottom: -4px; left: 0; width: 100%; height: 2px;
+            background-color: #C87D87; border-radius: 2px;
+        }
+
+        .summary-card {
+            background: #ffe4e6; /* Rose blossom / Rose 200 light tint */
+            background-image: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,228,230,0.8) 100%);
+            border-radius: 1.25rem;
+            border: 1px solid rgba(200,125,135,0.2);
+            box-shadow: 0 8px 25px -5px rgba(200,125,135,0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px -5px rgba(200,125,135,0.15);
+        }
+
+        .photo-strip img {
+            object-fit: cover;
+            border-radius: 1rem;
+            transition: transform 0.4s ease;
+        }
+        .photo-strip img:hover { transform: scale(1.03); }
+
+        .shopping-wrapper {
+            background: white;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(200,125,135,0.1);
+            box-shadow: 0 10px 30px -5px rgba(200,125,135,0.08);
+        }
+
+        .table-row-hover:hover { background-color: #fff8f9; }
+        
+        /* Modal Styles */
+        .modal { display: none; opacity: 0; transition: opacity 0.3s ease; }
+        .modal.show { display: flex; opacity: 1; }
+        .modal-content { transform: scale(0.95); transition: transform 0.3s ease; }
+        .modal.show .modal-content { transform: scale(1); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<div class="body-overlay"></div>
+
+<!-- Top Navigation Bar -->
+<nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-rose-100/50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <h1 class="font-serif text-2xl text-[#C87D87] font-bold">EventStudio</h1>
+        <ul class="flex gap-8 items-center text-sm font-medium">
+            <li><a href="/dashboard" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-chart-line mr-2"></i>Dashboard</a></li>
+            <li><a href="/guests" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-users mr-2"></i>Invitati</a></li>
+            <li><a href="/tasks" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-list-check mr-2"></i>Sarcini</a></li>
+            <li><a href="/budget" class="nav-link text-[#C87D87] font-semibold active"><i class="fa-solid fa-wallet mr-2"></i>Finante</a></li>
+            <li><a href="/seating" class="nav-link hover:text-[#C87D87]"><i class="fa-solid fa-chair mr-2"></i>Seat Manager</a></li>
+            <li><a href="/login" class="ml-4 px-6 py-2 bg-rose-50 text-[#C87D87] rounded-full hover:bg-[#C87D87] hover:text-white transition-all"><i class="fa-solid fa-right-from-bracket"></i></a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="flex-grow max-w-7xl mx-auto px-6 py-10 w-full flex flex-col gap-8">
+    
+    <!-- Header -->
+    <div>
+        <h2 class="font-serif text-3xl text-gray-800" th:text="${event.name} + ' - Financial Dashboard'">Financial Dashboard</h2>
+        <p class="text-sm text-gray-500 mt-2">Track your total budget, major task expenses, and your micro-purchases shopping list.</p>
+    </div>
+
+    <!-- Exception Flow 5.0.E1: Budget is 0 -->
+    <div th:if="${totalBudget == 0.0}" class="glass-card p-12 text-center border border-yellow-200 bg-yellow-50/50">
+        <i class="fa-solid fa-wallet text-5xl text-yellow-400 mb-4"></i>
+        <h3 class="font-serif text-2xl text-gray-800 mb-2">No budget allocated for this event.</h3>
+        <p class="text-sm text-gray-600 max-w-lg mx-auto mb-6">Before you can track your expenses and manage your shopping list, you need to set a master budget for this event.</p>
+        <button onclick="openBudgetModal()" class="px-8 py-3 bg-yellow-400 text-yellow-900 rounded-full font-semibold shadow-md hover:bg-yellow-500 transition-all">
+            Set Event Budget
+        </button>
+    </div>
+
+    <!-- Normal Flow: Budget overview and Shopping List -->
+    <div th:if="${totalBudget > 0.0}" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left: Financial Summary Cards -->
+        <div class="space-y-6">
+            <!-- Total Budget Card -->
+            <div class="glass-card card-budget p-7 flex justify-between items-center group">
+                <div>
+                    <p class="text-xs text-[#C87D87] uppercase tracking-widest font-semibold mb-1"><i class="fa-solid fa-vault mr-2 opacity-60"></i>Total Budget</p>
+                    <h3 class="text-3xl font-bold text-gray-800" th:text="'$' + ${#numbers.formatDecimal(totalBudget, 1, 'COMMA', 2, 'POINT')}">$0.00</h3>
+                </div>
+                <button onclick="openBudgetModal()" class="text-[#C87D87] hover:text-[#b86a76] transition-colors bg-white/60 w-9 h-9 rounded-full flex items-center justify-center shadow-sm" title="Edit Budget">
+                    <i class="fa-solid fa-pen text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Total Spent Card -->
+            <div class="glass-card card-spent p-7">
+                <div class="mb-4">
+                    <p class="text-xs text-[#C87D87] uppercase tracking-widest font-semibold mb-1"><i class="fa-solid fa-receipt mr-2 opacity-60"></i>Total Spent</p>
+                    <h3 class="text-3xl font-bold text-gray-800" th:text="'$' + ${#numbers.formatDecimal(totalSpent, 1, 'COMMA', 2, 'POINT')}">$0.00</h3>
+                </div>
+                <div class="space-y-2.5 mt-4 pt-4 border-t border-rose-100/50">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500"><i class="fa-solid fa-list-check text-[#C87D87] opacity-50 w-5"></i> Tasks</span>
+                        <span class="font-medium text-gray-700" th:text="'$' + ${#numbers.formatDecimal(tasksSpent, 1, 'COMMA', 2, 'POINT')}">$0.00</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500"><i class="fa-solid fa-bag-shopping text-[#C87D87] opacity-50 w-5"></i> Shopping</span>
+                        <span class="font-medium text-gray-700" th:text="'$' + ${#numbers.formatDecimal(shoppingSpent, 1, 'COMMA', 2, 'POINT')}">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remaining Budget Card -->
+            <div class="glass-card card-remaining p-7" th:classappend="${remaining <= 0} ? 'border-rose-300' : ''">
+                <p class="text-xs text-[#C87D87] uppercase tracking-widest font-semibold mb-1"><i class="fa-solid fa-piggy-bank mr-2 opacity-60"></i>Remaining Balance</p>
+                <h3 class="text-3xl font-bold text-gray-800" th:classappend="${remaining <= 0} ? 'text-rose-600' : ''" th:text="'$' + ${#numbers.formatDecimal(remaining, 1, 'COMMA', 2, 'POINT')}">$0.00</h3>
+            </div>
+        </div>
+
+        <!-- Right: Shopping List -->
+        <div class="lg:col-span-2 shopping-panel flex flex-col h-[600px]">
+            <div class="p-6 border-b border-rose-100/30 flex justify-between items-center rounded-t-3xl">
+                <div>
+                    <h3 class="font-serif text-xl text-gray-800"><i class="fa-solid fa-basket-shopping text-[#C87D87] opacity-60 mr-2"></i>Shopping List</h3>
+                    <p class="text-xs text-gray-500 mt-1">Track micro-expenses like decorations, favors, and prints.</p>
+                </div>
+                <button onclick="openShoppingModal()" class="px-5 py-2 bg-rose-50 text-[#C87D87] rounded-full font-semibold hover:bg-[#C87D87] hover:text-white transition-all text-sm shadow-sm">
+                    <i class="fa-solid fa-plus mr-1"></i> Add Item
+                </button>
+            </div>
+            
+            <div class="flex-grow overflow-y-auto p-0 custom-scrollbar">
+                <table class="w-full text-left border-collapse">
+                    <thead class="sticky top-0 bg-gray-50/95 backdrop-blur-sm z-10">
+                        <tr class="text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                            <th class="py-3 px-6">Item</th>
+                            <th class="py-3 px-6">Category</th>
+                            <th class="py-3 px-6 text-right">Cost</th>
+                            <th class="py-3 px-6 text-center">Status</th>
+                            <th class="py-3 px-6 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm text-gray-700 bg-white/50">
+                        <tr th:if="${items == null or items.isEmpty()}">
+                            <td colspan="5" class="py-16 text-center text-gray-400">
+                                <i class="fa-solid fa-basket-shopping text-4xl mb-4 text-rose-200 block"></i>
+                                Your shopping list is empty. Add your first item!
+                            </td>
+                        </tr>
+                        <tr th:each="item : ${items}" class="border-b border-gray-50 table-row-hover transition-colors last:border-0" th:classappend="${item.isPurchased} ? 'bg-gray-50/50 opacity-75' : ''">
+                            <td class="py-4 px-6">
+                                <span class="font-medium text-gray-800" th:classappend="${item.isPurchased} ? 'line-through text-gray-400' : ''" th:text="${item.itemName}">Item Name</span>
+                            </td>
+                            <td class="py-4 px-6 text-gray-500 text-xs">
+                                <span class="bg-gray-100 px-2 py-1 rounded-md" th:text="${item.category}">Category</span>
+                            </td>
+                            <td class="py-4 px-6 text-right font-semibold text-gray-700" th:text="'$' + ${#numbers.formatDecimal(item.cost, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                            <td class="py-4 px-6 text-center">
+                                <form th:action="@{/events/{eventId}/budget/items/{itemId}/toggle(eventId=${event.id}, itemId=${item.id})}" method="POST">
+                                    <button type="submit" class="w-6 h-6 rounded-md border flex items-center justify-center transition-colors shadow-sm"
+                                            th:classappend="${item.isPurchased} ? 'bg-green-500 border-green-600 text-white' : 'bg-white border-gray-300 text-transparent hover:border-[#C87D87]'">
+                                        <i class="fa-solid fa-check text-xs"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            <td class="py-4 px-6 text-right">
+                                <form th:action="@{/events/{eventId}/budget/items/{itemId}/delete(eventId=${event.id}, itemId=${item.id})}" method="POST">
+                                    <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors" title="Remove Item">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Budget Modal -->
+<div id="budgetModal" class="modal fixed inset-0 z-50 items-center justify-center">
+    <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onclick="closeBudgetModal()"></div>
+    <div class="modal-content relative bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl mx-4">
+        <button onclick="closeBudgetModal()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="font-serif text-2xl text-gray-800 mb-6">Event Budget</h3>
+        <form th:action="@{/events/{eventId}/budget/update(eventId=${event.id})}" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1 ml-1">Total Budget ($)</label>
+                <input type="number" name="totalBudget" min="0" step="0.01" th:value="${totalBudget}" required
+                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87] transition-colors text-xl font-semibold text-gray-800 text-center">
+            </div>
+            <div class="pt-4">
+                <button type="submit" class="w-full py-3 bg-gray-800 text-white font-semibold rounded-full shadow-lg hover:bg-gray-900 transition-all">Save Budget</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Shopping Item Modal -->
+<div id="shoppingModal" class="modal fixed inset-0 z-50 items-center justify-center">
+    <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onclick="closeShoppingModal()"></div>
+    <div class="modal-content relative bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl mx-4">
+        <button onclick="closeShoppingModal()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="font-serif text-2xl text-gray-800 mb-6">Add Shopping Item</h3>
+        <form th:action="@{/events/{eventId}/budget/items/new(eventId=${event.id})}" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1 ml-1">Item Name *</label>
+                <input type="text" name="itemName" required placeholder="e.g. Wedding Favors"
+                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87] transition-colors text-sm">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1 ml-1">Category</label>
+                    <select name="category" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87] transition-colors text-sm bg-white">
+                        <option value="Decor">Decor</option>
+                        <option value="Stationery">Stationery</option>
+                        <option value="Food &amp; Drinks">Food &amp; Drinks</option>
+                        <option value="Gifts">Gifts</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1 ml-1">Cost ($) *</label>
+                    <input type="number" name="cost" min="0" step="0.01" required placeholder="0.00"
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-[#C87D87] focus:border-[#C87D87] transition-colors text-sm">
+                </div>
+            </div>
+            <div class="pt-4 flex justify-end gap-3 mt-4">
+                <button type="button" onclick="closeShoppingModal()" class="px-6 py-2.5 text-gray-500 font-semibold text-sm rounded-full hover:bg-gray-100 transition-colors">Cancel</button>
+                <button type="submit" class="px-8 py-2.5 bg-[#C87D87] text-white font-semibold text-sm rounded-full shadow-lg hover:bg-[#b86a76] transition-all">Add Item</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openBudgetModal() { document.getElementById('budgetModal').classList.add('show'); }
+    function closeBudgetModal() { document.getElementById('budgetModal').classList.remove('show'); }
+    
+    function openShoppingModal() { document.getElementById('shoppingModal').classList.add('show'); }
+    function closeShoppingModal() { document.getElementById('shoppingModal').classList.remove('show'); }
+</script>
+
+</body>
+</html>
